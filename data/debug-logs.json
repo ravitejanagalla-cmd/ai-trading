@@ -1,0 +1,102 @@
+[
+  {
+    "type": "data_fetch",
+    "stage": "nifty50_constituents",
+    "data": {
+      "count": 10,
+      "symbols": [
+        "NIFTY 50",
+        "SHRIRAMFIN",
+        "SBIN",
+        "BAJAJFINSV",
+        "ADANIENT",
+        "MARUTI",
+        "BAJFINANCE",
+        "HCLTECH",
+        "MAXHEALTH",
+        "EICHERMOT"
+      ]
+    },
+    "timestamp": "2025-12-07T13:57:52.061Z"
+  },
+  {
+    "type": "market_data",
+    "stage": "quotes_fetched",
+    "data": {
+      "symbolCount": 9,
+      "samplePrices": {
+        "BAJAJFINSV": {
+          "close": 2092.9,
+          "volume": 182
+        },
+        "SHRIRAMFIN": {
+          "close": 853.35,
+          "volume": 6451
+        },
+        "ADANIENT": {
+          "close": 2263,
+          "volume": 2852
+        }
+      }
+    },
+    "timestamp": "2025-12-07T13:58:17.433Z"
+  },
+  {
+    "type": "llm_input",
+    "stage": "agent_input",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "date": "2025-12-07",
+      "symbols": [
+        "BAJAJFINSV",
+        "SHRIRAMFIN",
+        "ADANIENT",
+        "SBIN",
+        "MAXHEALTH",
+        "EICHERMOT",
+        "BAJFINANCE",
+        "HCLTECH",
+        "MARUTI"
+      ],
+      "marketDataSample": {
+        "BAJAJFINSV": {
+          "symbol": "BAJAJFINSV",
+          "date": "2025-12-07",
+          "open": 2050,
+          "high": 2110,
+          "low": 2045.8,
+          "close": 2092.9,
+          "volume": 182
+        },
+        "SHRIRAMFIN": {
+          "symbol": "SHRIRAMFIN",
+          "date": "2025-12-07",
+          "open": 828.15,
+          "high": 857,
+          "low": 828.15,
+          "close": 853.35,
+          "volume": 6451
+        }
+      },
+      "newsCount": 1
+    },
+    "timestamp": "2025-12-07T13:58:17.444Z"
+  },
+  {
+    "type": "llm_output",
+    "stage": "decision_made",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "ordersCount": 0,
+      "confidence": 0.22,
+      "summary": "No trades placed due to lack of clear technical signals and conservative risk limits.",
+      "keySignals": [
+        "ema_cross",
+        "vol_spike",
+        "news_sentiment"
+      ],
+      "orders": []
+    },
+    "timestamp": "2025-12-07T13:58:28.027Z"
+  }
+]

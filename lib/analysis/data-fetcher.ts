@@ -1,0 +1,131 @@
+import { getHistoricalData, getStockQuote } from '@/lib/scrapers/nse-scraper';
+import { storeStockPrice } from '@/lib/data/db';
+
+export interface ComprehensiveStockData {
+  symbol: string;
+  current: any;
+  historical: any[];
+  news: any[];
+  error?: string;
+}
+
+/**
+ * Fetch all available data for a stock symbol
+ */
+export async function fetchComprehensiveData(
+  symbol: string,
+  days: number = 90
+): Promise<ComprehensiveStockData> {
+  try {
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+    console.log(`📊 Fetching comprehensive data for ${symbol}...`);
+
+    // Fetch current quote and historical data in parallel
+    const [currentQuote, historicalData] = await Promise.all([
+      getStockQuote(symbol),
+      getHistoricalData(symbol, formatDate(startDate), formatDate(endDate))
+    ]);
+
+    console.log(`✅ Fetched ${historicalData?.length || 0} days of historical data for ${symbol}`);
+
+    // Fetch real news
+    let news: any[] = [];
+    try {
+      const { scrapeStockNews } = await import('@/lib/scrapers/news-scraper');
+      news = await scrapeStockNews(symbol, 7);
+      console.log(`✅ Fetched ${news.length} news items for ${symbol}`);
+    } catch (error) {
+      console.error('News scraping failed:', error);
+      news = [{
+        date: new Date().toISOString().split('T')[0],
+        title: `${symbol} Market Update`,
+        summary: 'Unable to fetch news at this time',
+        source: 'System'
+      }];
+    }
+
+    // Store historical data in database
+    if (historicalData && historicalData.length > 0) {
+      for (const day of historicalData.slice(0, 90)) { // Limit to 90 days
+        try {
+          await storeStockPrice({
+            symbol,
+            date: day.date,
+            open: day.open,
+            high: day.high,
+            low: day.low,
+            close: day.close,
+            volume: day.volume
+          });
+        } catch (error) {
+          // Skip duplicates silently
+        }
+      }
+    }
+
+    return {
+      symbol,
+      current: currentQuote,
+      historical: historicalData || [],
+      news // Real scraped news
+    };
+  } catch (error) {
+    console.error(`Error fetching data for ${symbol}:`, error);
+    return {
+      symbol,
+      current: null,
+      historical: [],
+      news: [],
+      error: error instanceof Error ? error.message : 'Failed to fetch data'
+    };
+  }
+}
+
+/**
+ * Calculate technical indicators from historical data
+ */
+export function calculateIndicators(historical: any[]) {
+  if (!historical || historical.length < 5) {
+    return {
+      trend: 'Unknown',
+      momentum: 'Neutral',
+      volatility: 0
+    };
+  }
+
+  const prices = historical.map(d => d.close).reverse();
+  const current = prices[prices.length - 1];
+  const ma5 = prices.slice(-5).reduce((a, b) => a + b, 0) / 5;
+  const ma20 = prices.length >= 20 
+    ? prices.slice(-20).reduce((a, b) => a + b, 0) / 20 
+    : ma5;
+
+  // Simple trend detection
+  const trend = current > ma5 && ma5 > ma20 ? 'Bullish' 
+    : current < ma5 && ma5 < ma20 ? 'Bearish' 
+    : 'Sideways';
+
+  // Momentum (last 5 days change)
+  const momentum = ((current - prices[prices.length - 6]) / prices[prices.length - 6] * 100).toFixed(2);
+
+  // Volatility (standard deviation of last 10 days)
+  const recent = prices.slice(-10);
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const variance = recent.reduce((sum, price) => sum + Math.pow(price - avg, 2), 0) / recent.length;
+  const volatility = Math.sqrt(variance);
+
+  return {
+    trend,
+    momentum: parseFloat(momentum),
+    volatility: parseFloat(volatility.toFixed(2)),
+    currentPrice: current,
+    ma5: parseFloat(ma5.toFixed(2)),
+    ma20: parseFloat(ma20.toFixed(2))
+  };
+}

@@ -1,0 +1,45 @@
+{
+  "agentType": "BaseAgentIndia",
+  "market": "india",
+  "dateRange": {
+    "initDate": "2024-01-01",
+    "endDate": "2024-03-31"
+  },
+  "universe": "NIFTY50",
+  "models": [
+    {
+      "name": "openai/gpt-oss-20b",
+      "basemodel": "openai/gpt-oss-20b",
+      "provider": "lmstudio",
+      "signature": "openai-gpt-oss-20b-lmstudio",
+      "enabled": true,
+      "description": "Local model via LM Studio"
+    }
+  ],
+  "agentConfig": {
+    "initialCash": 100000,
+    "maxPositionPct": 0.05,
+    "maxTotalExposurePct": 0.5,
+    "minCashReservePct": 0.05,
+    "maxDailyTrades": 20,
+    "allowMargin": false,
+    "slippageModel": {
+      "type": "percent",
+      "value": 0.1
+    },
+    "maxOrderValue": 10000
+  },
+  "marketRules": {
+    "tradingHours": {
+      "start": "09:15",
+      "end": "15:30",
+      "timezone": "Asia/Kolkata"
+    },
+    "settlement": "T+2",
+    "tickSize": 0.05,
+    "circuitLimitPct": 10
+  },
+  "logConfig": {
+    "logPath": "./data/agent_data_india"
+  }
+}
