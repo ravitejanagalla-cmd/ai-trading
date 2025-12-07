@@ -6,7 +6,7 @@ import { Pool } from 'pg';
  * Verify tables exist and show sample data
  */
 export async function GET(request: NextRequest) {
-  const connectionString = process.env.POSTGRES_URL  
+  const connectionString = process.env.POSTGRES_URL!  
   const pool = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false }
