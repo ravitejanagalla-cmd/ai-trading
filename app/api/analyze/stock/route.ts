@@ -39,17 +39,38 @@ export async function POST(request: NextRequest) {
     
     if (data.error) {
       return NextResponse.json(
-        { success: false, error: data.error },
+        { 
+          success: false, 
+          error: data.error,
+          suggestion: 'This stock may not be available on NSE or data fetching failed. Try another symbol.'
+        },
         { status: 500 }
       );
     }
 
-    console.log(`📊 Data fetched: ${data.historical.length} days of history`);
+    // Validate data
+    if (!data.historical || data.historical.length < 5) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Insufficient historical data for ${symbol}. Only ${data.historical?.length || 0} days available.`,
+          suggestion: 'Try a more actively traded stock like TCS, RELIANCE, or INFY.'
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log(`📊 Data fetched: ${data.historical.length} days of history, ${data.news.length} news items`);
 
     // Step 3: Analyze with LLM  
     const llm = new LMStudioProvider('gpt-oss-20b');
 
     const analysis = await analyzeWithLLM(llm, symbol, data);
+    
+    // Validate analysis quality
+    if (analysis.confidence < 0.3) {
+      console.warn(`⚠️ Low confidence analysis for ${symbol}: ${analysis.confidence}`);
+    }
     
     console.log(`✅ Analysis complete: ${analysis.recommendation} (confidence: ${analysis.confidence})`);
 

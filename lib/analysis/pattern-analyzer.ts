@@ -32,8 +32,8 @@ export async function analyzeWithLLM(
   // Calculate technical indicators
   const indicators = calculateIndicators(data.historical);
   
-  // Build analysis prompt
-  const prompt = buildAnalysisPrompt(symbol, data, indicators);
+  // Build analysis prompt with previous analysis
+  const prompt = await buildAnalysisPrompt(symbol, data, indicators);
   
   // Get LLM analysis using direct API call
   try {
@@ -72,9 +72,42 @@ export async function analyzeWithLLM(
 }
 
 /**
+ * Get previous analysis for a symbol to help AI learn
+ */
+async function getPreviousAnalysis(symbol: string, limit: number = 3): Promise<any[]> {
+  try {
+    const client = await pool.connect();
+    
+    try {
+      const result = await client.query(`
+        SELECT analysis_date, patterns, recommendation, confidence, reasoning, created_at
+        FROM stock_analysis
+        WHERE symbol = $1
+        ORDER BY analysis_date DESC
+        LIMIT $2
+      `, [symbol, limit]);
+
+      return result.rows.map(row => ({
+        date: row.analysis_date,
+        patterns: row.patterns,
+        recommendation: row.recommendation,
+        confidence: row.confidence,
+        reasoning: row.reasoning,
+        analyzedAt: row.created_at
+      }));
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Error fetching previous analysis:', error);
+    return [];
+  }
+}
+
+/**
  * Build comprehensive analysis prompt for LLM
  */
-function buildAnalysisPrompt(symbol: string, data: any, indicators: any): string {
+async function buildAnalysisPrompt(symbol: string, data: any, indicators: any): Promise<string> {
   const current = data.current;
   const historical = data.historical;
   
@@ -84,6 +117,29 @@ function buildAnalysisPrompt(symbol: string, data: any, indicators: any): string
     close: d.close,
     volume: d.volume
   }));
+
+  // Get previous analysis
+  const previousAnalysis = await getPreviousAnalysis(symbol, 3);
+
+  let previousAnalysisSection = '';
+  if (previousAnalysis.length > 0) {
+    previousAnalysisSection = `\n**PREVIOUS ANALYSIS HISTORY:**
+You have analyzed this stock before. Learn from your past decisions:
+
+${previousAnalysis.map((pa: any, idx: number) => `
+Analysis #${idx + 1} (${pa.date}):
+- Recommendation: ${pa.recommendation}
+- Confidence: ${(pa.confidence * 100).toFixed(0)}%
+- Reasoning: ${pa.reasoning}
+- Patterns: ${JSON.stringify(pa.patterns)}
+`).join('\n')}
+
+Consider:
+1. Have market conditions changed since your last analysis?
+2. Were your previous predictions accurate?
+3. Should you adjust your confidence based on past performance?
+`;
+  }
 
   return `You are an expert stock market analyst specializing in Indian equities. Analyze ${symbol} and provide trading insights.
 
@@ -104,7 +160,8 @@ function buildAnalysisPrompt(symbol: string, data: any, indicators: any): string
 ${JSON.stringify(recentPrices, null, 2)}
 
 **NEWS & EVENTS:**
-${data.news.map((n: any) => `- ${n.title}: ${n.summary}`).join('\n')}
+${data.news.map((n: any) => `- [${n.source}] ${n.title}: ${n.summary.substring(0, 150)}...`).join('\n')}
+${previousAnalysisSection}
 
 **YOUR TASK:**
 Analyze this data and provide a JSON response with the following structure:
@@ -133,6 +190,7 @@ Focus on:
 3. Momentum and trend strength
 4. Risk-reward ratio
 5. Actionable trading recommendation
+${previousAnalysis.length > 0 ? '6. How this analysis compares to your previous recommendations' : ''}
 
 Respond ONLY with valid JSON.`;
 }
@@ -176,7 +234,7 @@ async function storeAnalysis(symbol: string, analysis: PatternAnalysis): Promise
           symbol VARCHAR(20) NOT NULL,
           analysis_date DATE NOT NULL,
           patterns JSONB,
-          recommendation VARCHAR(10),
+          recommendation VARCHAR(50),
           confidence FLOAT,
           reasoning TEXT,
           created_at TIMESTAMP DEFAULT NOW(),
@@ -205,6 +263,86 @@ async function storeAnalysis(symbol: string, analysis: PatternAnalysis): Promise
     }
   } catch (error) {
     console.error('Error storing analysis:', error);
+  }
+}
+
+/**
+ * Store news events in database
+ */
+export async function storeNewsEvents(symbol: string, news: any[]): Promise<void> {
+  if (!news || news.length === 0) return;
+
+  try {
+    const client = await pool.connect();
+    
+    try {
+      // Create table if not exists
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS news_events (
+          id SERIAL PRIMARY KEY,
+          symbol VARCHAR(20),
+          event_date DATE,
+          title TEXT,
+          summary TEXT,
+          source VARCHAR(100),
+          impact_score FLOAT,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+
+      // Add new columns if they don't exist (migration)
+      await client.query(`
+        DO $$ 
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news_events' AND column_name='category') THEN
+            ALTER TABLE news_events ADD COLUMN category VARCHAR(50);
+          END IF;
+          
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news_events' AND column_name='sentiment') THEN
+            ALTER TABLE news_events ADD COLUMN sentiment VARCHAR(20);
+          END IF;
+          
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news_events' AND column_name='impact') THEN
+            ALTER TABLE news_events ADD COLUMN impact VARCHAR(20);
+          END IF;
+          
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news_events' AND column_name='url') THEN
+            ALTER TABLE news_events ADD COLUMN url TEXT;
+          END IF;
+        END $$;
+      `);
+
+      // Create indexes if they don't exist
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_news_symbol ON news_events(symbol, event_date DESC);
+        CREATE INDEX IF NOT EXISTS idx_news_category ON news_events(category);
+        CREATE INDEX IF NOT EXISTS idx_news_sentiment ON news_events(sentiment);
+      `);
+
+      for (const item of news) {
+        await client.query(`
+          INSERT INTO news_events (symbol, event_date, title, summary, source, category, sentiment, impact, impact_score, url)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          ON CONFLICT DO NOTHING
+        `, [
+          symbol,
+          item.date,
+          item.title,
+          item.summary || '',
+          item.source,
+          item.category || 'general',
+          item.sentiment || 'neutral',
+          item.impact || 'medium',
+          item.impact === 'high' ? 0.8 : item.impact === 'low' ? 0.3 : 0.5,
+          item.url || ''
+        ]);
+      }
+      console.log(`✅ Stored ${news.length} analyzed news items for ${symbol}`);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Error storing news:', error);
   }
 }
 

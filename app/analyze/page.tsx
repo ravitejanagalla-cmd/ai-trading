@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AnalysisResult {
     symbol: string;
@@ -45,18 +45,25 @@ export default function AnalyzePage() {
         }
     };
 
-    // Debounce suggestions
+    // Debouncing with useEffect
     const handleTickerChange = (value: string) => {
         setTicker(value);
+        setSuggestions([]);
         setShowSuggestions(false);
-
-        // Debounce
-        const timeoutId = setTimeout(() => {
-            fetchSuggestions(value);
-        }, 300);
-
-        return () => clearTimeout(timeoutId);
     };
+
+    // Debounce effect
+    useEffect(() => {
+        if (ticker.length >= 2) {
+            const timeoutId = setTimeout(() => {
+                fetchSuggestions(ticker);
+            }, 550);
+
+            return () => clearTimeout(timeoutId);
+        } else {
+            setSuggestions([]);
+        }
+    }, [ticker]);
 
     const selectSuggestion = (symbol: string) => {
         setTicker(symbol);
@@ -172,11 +179,15 @@ export default function AnalyzePage() {
 
                 {/* Error */}
                 {error && (
-                    <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-8">
-                        <p className="text-red-200">❌ {error}</p>
+                    <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 mb-8">
+                        <p className="text-red-200 text-lg font-semibold mb-2">❌ {error}</p>
+                        {(error.includes('Insufficient') || error.includes('not available')) && (
+                            <p className="text-red-300 text-sm mt-2">
+                                💡 Try popular stocks: TCS, RELIANCE, INFY, HDFCBANK, ICICIBANK
+                            </p>
+                        )}
                     </div>
                 )}
-
                 {/* Results */}
                 {result && (
                     <div className="space-y-6">

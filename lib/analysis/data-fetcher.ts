@@ -34,19 +34,40 @@ export async function fetchComprehensiveData(
 
     console.log(`✅ Fetched ${historicalData?.length || 0} days of historical data for ${symbol}`);
 
-    // Fetch real news
+    // Fetch news from reliable API
     let news: any[] = [];
     try {
-      const { scrapeStockNews } = await import('@/lib/scrapers/news-scraper');
-      news = await scrapeStockNews(symbol, 7);
+      const { fetchStockNewsFromAPI, calculateNewsSentimentScore } = await import('@/lib/scrapers/news-api');
+      news = await fetchStockNewsFromAPI(symbol, 7);
       console.log(`✅ Fetched ${news.length} news items for ${symbol}`);
+      
+      if (news.length > 0) {
+        // Calculate sentiment
+        const sentiment = calculateNewsSentimentScore(news);
+        console.log(`📊 News sentiment: ${sentiment.overall} (${sentiment.bullish} bullish, ${sentiment.bearish} bearish)`);
+      }
+      
+      // Analyze news with LLM for better categorization
+      if (news.length > 0) {
+        const { analyzeNewsWithLLM } = await import('@/lib/analysis/news-analyzer');
+        console.log(`🔍 Analyzing ${news.length} news items with LLM...`);
+        news = await analyzeNewsWithLLM(news);
+        console.log(`✅ Analyzed and categorized news`);
+        
+        // Store analyzed news in database
+        const { storeNewsEvents } = await import('@/lib/analysis/pattern-analyzer');
+        await storeNewsEvents(symbol, news);
+      }
     } catch (error) {
-      console.error('News scraping failed:', error);
+      console.error('News API/analysis failed:', error);
       news = [{
         date: new Date().toISOString().split('T')[0],
         title: `${symbol} Market Update`,
         summary: 'Unable to fetch news at this time',
-        source: 'System'
+        source: 'System',
+        category: 'general',
+        sentiment: 'neutral',
+        impact: 'low'
       }];
     }
 
