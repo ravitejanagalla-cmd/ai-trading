@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         message: 'Database initialized successfully',
         connectionTime: result.rows[0].now,
         tables: tables.rows.map(r => r.table_name),
-        connectionString: connectionString.substring(0, 50) + '...'
+        connectionString: connectionString ? connectionString.substring(0, 50) + '...' : 'undefined'
       });
     } finally {
       client.release();

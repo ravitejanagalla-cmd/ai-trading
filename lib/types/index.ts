@@ -20,11 +20,35 @@ export interface NewsItem {
 
 export interface FundamentalData {
   symbol: string;
-  pe: number;
+  companyName: string;
+  sector: string;
+  industry: string;
   marketCap: number;
+  peRatio: number;
+  pbRatio: number;
   eps: number;
-  bookValue?: number;
-  dividendYield?: number;
+  dividendYield: number;
+  debtToEquity: number;
+  roe: number;
+  roic: number;
+  currentRatio: number;
+  quickRatio: number;
+  netMargin: number;
+  operatingMargin: number;
+  assetTurnover: number;
+  bookValue: number;
+  tangibleBookValue: number;
+  priceToBook: number;
+  priceToSales: number;
+  evToEbitda: number;
+  weekHigh50: number;
+  weekLow50: number;
+  weekChange52: number;
+  beta: number;
+  avgVolume: number;
+  description?: string;
+  website?: string;
+  employees?: number;
 }
 
 // Account and portfolio types

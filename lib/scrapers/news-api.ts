@@ -17,6 +17,14 @@ export interface NewsItem {
  */
 export async function fetchStockNewsFromAPI(symbol: string, days: number = 7): Promise<NewsItem[]> {
   try {
+    const apiKey = process.env.FINNHUB_API_KEY;
+    
+    // Check if API key is configured
+    if (!apiKey) {
+      console.log(`⚠️ Finnhub API key not configured, skipping to Yahoo Finance RSS...`);
+      return await fetchNewsFromYahooRSS(symbol);
+    }
+
     // For Indian stocks, try multiple formats
     const symbols = [
       symbol,           // Original (TCS)
@@ -28,8 +36,6 @@ export async function fetchStockNewsFromAPI(symbol: string, days: number = 7): P
     
     for (const trySymbol of symbols) {
       try {
-        const apiKey = process.env.FINNHUB_API_KEY!;
-        
         const endDate = new Date();
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
@@ -48,7 +54,7 @@ export async function fetchStockNewsFromAPI(symbol: string, days: number = 7): P
           timeout: 10000
         });
 
-        if (response.data && response.data.length > 0) {
+        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
           news = response.data.slice(0, 10).map((item: any) => ({
             date: new Date(item.datetime * 1000).toISOString().split('T')[0],
             title: item.headline,
@@ -68,7 +74,13 @@ export async function fetchStockNewsFromAPI(symbol: string, days: number = 7): P
           console.log(`⚠️ Finnhub rate limit/blocked for ${trySymbol}, trying next...`);
           continue;
         }
+        // Handle timeouts
+        if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+          console.log(`⚠️ Finnhub timeout for ${trySymbol}, trying next...`);
+          continue;
+        }
         // For other errors, continue to next symbol
+        console.log(`⚠️ Finnhub error for ${trySymbol}:`, err.message);
         continue;
       }
     }
@@ -77,7 +89,7 @@ export async function fetchStockNewsFromAPI(symbol: string, days: number = 7): P
     console.log(`⚠️ No Finnhub news found, trying Yahoo Finance RSS...`);
     return await fetchNewsFromYahooRSS(symbol);
   } catch (error) {
-    console.error('News API error:', error);
+    console.error('⚠️ News API error:', error);
     return await fetchNewsFromYahooRSS(symbol);
   }
 }
@@ -90,14 +102,14 @@ async function fetchNewsFromYahooRSS(symbol: string): Promise<NewsItem[]> {
     console.log(`📰 Fetching news for ${symbol} from Yahoo Finance RSS...`);
     
     // Try both NSE and BSE formats
-    const formats = [`${symbol}.NS`, `${symbol}.BO`];
+    const formats = [`${symbol}.NS`, `${symbol}.BO`, symbol];
     
     for (const ticker of formats) {
       try {
         const response = await axios.get(`https://finance.yahoo.com/rss/headline?s=${ticker}`, {
-          timeout: 10000,
+          timeout: 15000,
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
           }
         });
 
@@ -105,6 +117,11 @@ async function fetchNewsFromYahooRSS(symbol: string): Promise<NewsItem[]> {
           // Simple XML parsing
           const items = response.data.match(/<item>[\s\S]*?<\/item>/g) || [];
           
+          if (items.length === 0) {
+            console.log(`⚠️ No items found in Yahoo RSS for ${ticker}`);
+            continue;
+          }
+
           const news: NewsItem[] = items.slice(0, 10).map((item: string) => {
             const title = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/)?.[1] || 
                          item.match(/<title>(.*?)<\/title>/)?.[1] || '';
@@ -115,23 +132,29 @@ async function fetchNewsFromYahooRSS(symbol: string): Promise<NewsItem[]> {
 
             return {
               date: pubDate ? new Date(pubDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-              title: title.replace(/&amp;/g, '&').replace(/&quot;/g, '"'),
+              title: title.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
               summary: description.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').substring(0, 200),
               source: 'Yahoo Finance',
               url: link,
               category: categorizeNews(title + ' ' + description),
               sentiment: determineSentiment(title + ' ' + description)
             };
-          }).filter((n: NewsItem) => n.title.length > 10);
+          }).filter((n: NewsItem) => n.title && n.title.length > 5);
 
           if (news.length > 0) {
-            console.log(JSON.stringify(news, null, 2));
             console.log(`✅ Fetched ${news.length} news items from Yahoo Finance (${ticker})`);
             return news;
           }
         }
-      } catch (err) {
-        // Try next format
+      } catch (err: any) {
+        // Log error details but continue
+        if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+          console.log(`⚠️ Yahoo Finance timeout for ${ticker}, trying next...`);
+        } else if (err.response?.status === 404) {
+          console.log(`⚠️ No Yahoo Finance data for ${ticker}, trying next...`);
+        } else {
+          console.log(`⚠️ Yahoo Finance error for ${ticker}:`, err.message);
+        }
         continue;
       }
     }
@@ -140,7 +163,7 @@ async function fetchNewsFromYahooRSS(symbol: string): Promise<NewsItem[]> {
     console.log(`⚠️ All news sources failed, generating placeholder...`);
     return generatePlaceholderNews(symbol);
   } catch (error) {
-    console.error('Yahoo RSS error:', error);
+    console.error('⚠️ Yahoo RSS error:', error);
     return generatePlaceholderNews(symbol);
   }
 }

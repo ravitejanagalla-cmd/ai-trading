@@ -98,5 +98,397 @@
       "orders": []
     },
     "timestamp": "2025-12-07T13:58:28.027Z"
+  },
+  {
+    "type": "data_fetch",
+    "stage": "nifty50_constituents",
+    "data": {
+      "count": 10,
+      "symbols": [
+        "NIFTY 50",
+        "TATASTEEL",
+        "HINDALCO",
+        "ETERNAL",
+        "ULTRACEMCO",
+        "LT",
+        "MARUTI",
+        "JSWSTEEL",
+        "NESTLEIND",
+        "BHARTIARTL"
+      ]
+    },
+    "timestamp": "2025-12-14T11:44:28.923Z"
+  },
+  {
+    "type": "market_data",
+    "stage": "quotes_fetched",
+    "data": {
+      "symbolCount": 9,
+      "samplePrices": {
+        "ETERNAL": {
+          "close": 297.85,
+          "volume": 162238
+        },
+        "ULTRACEMCO": {
+          "close": 11730,
+          "volume": 565
+        },
+        "HINDALCO": {
+          "close": 851.2,
+          "volume": 21786
+        }
+      }
+    },
+    "timestamp": "2025-12-14T11:44:55.555Z"
+  },
+  {
+    "type": "llm_input",
+    "stage": "agent_input",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "date": "2025-12-14",
+      "symbols": [
+        "ETERNAL",
+        "ULTRACEMCO",
+        "HINDALCO",
+        "TATASTEEL",
+        "LT",
+        "MARUTI",
+        "JSWSTEEL",
+        "NESTLEIND",
+        "BHARTIARTL"
+      ],
+      "marketDataSample": {
+        "ETERNAL": {
+          "symbol": "ETERNAL",
+          "date": "2025-12-14",
+          "open": 290.1,
+          "high": 299,
+          "low": 288.6,
+          "close": 297.85,
+          "volume": 162238
+        },
+        "ULTRACEMCO": {
+          "symbol": "ULTRACEMCO",
+          "date": "2025-12-14",
+          "open": 11491,
+          "high": 11738,
+          "low": 11481,
+          "close": 11730,
+          "volume": 565
+        }
+      },
+      "newsCount": 1
+    },
+    "timestamp": "2025-12-14T11:44:55.563Z"
+  },
+  {
+    "type": "llm_output",
+    "stage": "decision_made",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "ordersCount": 0,
+      "confidence": 0,
+      "summary": "LM Studio error: Error",
+      "keySignals": [],
+      "orders": []
+    },
+    "timestamp": "2025-12-14T11:44:59.888Z"
+  },
+  {
+    "type": "data_fetch",
+    "stage": "nifty50_constituents",
+    "data": {
+      "count": 10,
+      "symbols": [
+        "NIFTY 50",
+        "TATASTEEL",
+        "HINDALCO",
+        "ETERNAL",
+        "ULTRACEMCO",
+        "LT",
+        "MARUTI",
+        "JSWSTEEL",
+        "NESTLEIND",
+        "BHARTIARTL"
+      ]
+    },
+    "timestamp": "2025-12-14T11:47:30.634Z"
+  },
+  {
+    "type": "market_data",
+    "stage": "quotes_fetched",
+    "data": {
+      "symbolCount": 9,
+      "samplePrices": {
+        "HINDALCO": {
+          "close": 851.2,
+          "volume": 21786
+        },
+        "ETERNAL": {
+          "close": 297.85,
+          "volume": 162238
+        },
+        "TATASTEEL": {
+          "close": 172,
+          "volume": 144807
+        }
+      }
+    },
+    "timestamp": "2025-12-14T11:47:57.347Z"
+  },
+  {
+    "type": "llm_input",
+    "stage": "agent_input",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "date": "2025-12-14",
+      "symbols": [
+        "HINDALCO",
+        "ETERNAL",
+        "TATASTEEL",
+        "ULTRACEMCO",
+        "LT",
+        "BHARTIARTL",
+        "NESTLEIND",
+        "MARUTI",
+        "JSWSTEEL"
+      ],
+      "marketDataSample": {
+        "HINDALCO": {
+          "symbol": "HINDALCO",
+          "date": "2025-12-14",
+          "open": 830.8,
+          "high": 855,
+          "low": 830.6,
+          "close": 851.2,
+          "volume": 21786
+        },
+        "ETERNAL": {
+          "symbol": "ETERNAL",
+          "date": "2025-12-14",
+          "open": 290.1,
+          "high": 299,
+          "low": 288.6,
+          "close": 297.85,
+          "volume": 162238
+        }
+      },
+      "newsCount": 1
+    },
+    "timestamp": "2025-12-14T11:47:57.353Z"
+  },
+  {
+    "type": "llm_output",
+    "stage": "decision_made",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "ordersCount": 0,
+      "confidence": 0,
+      "summary": "LM Studio error: Error",
+      "keySignals": [],
+      "orders": []
+    },
+    "timestamp": "2025-12-14T11:48:02.393Z"
+  },
+  {
+    "type": "data_fetch",
+    "stage": "nifty50_constituents",
+    "data": {
+      "count": 10,
+      "symbols": [
+        "NIFTY 50",
+        "TATASTEEL",
+        "HINDALCO",
+        "ETERNAL",
+        "ULTRACEMCO",
+        "LT",
+        "MARUTI",
+        "JSWSTEEL",
+        "NESTLEIND",
+        "BHARTIARTL"
+      ]
+    },
+    "timestamp": "2025-12-14T12:12:46.442Z"
+  },
+  {
+    "type": "market_data",
+    "stage": "quotes_fetched",
+    "data": {
+      "symbolCount": 9,
+      "samplePrices": {
+        "HINDALCO": {
+          "close": 851.2,
+          "volume": 21786
+        },
+        "TATASTEEL": {
+          "close": 172,
+          "volume": 144807
+        },
+        "ULTRACEMCO": {
+          "close": 11730,
+          "volume": 565
+        }
+      }
+    },
+    "timestamp": "2025-12-14T12:12:52.171Z"
+  },
+  {
+    "type": "llm_input",
+    "stage": "agent_input",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "date": "2025-12-14",
+      "symbols": [
+        "HINDALCO",
+        "TATASTEEL",
+        "ULTRACEMCO",
+        "ETERNAL",
+        "MARUTI",
+        "JSWSTEEL",
+        "BHARTIARTL",
+        "LT",
+        "NESTLEIND"
+      ],
+      "marketDataSample": {
+        "HINDALCO": {
+          "symbol": "HINDALCO",
+          "date": "2025-12-14",
+          "open": 830.8,
+          "high": 855,
+          "low": 830.6,
+          "close": 851.2,
+          "volume": 21786
+        },
+        "TATASTEEL": {
+          "symbol": "TATASTEEL",
+          "date": "2025-12-14",
+          "open": 167.6,
+          "high": 172.5,
+          "low": 167.4,
+          "close": 172,
+          "volume": 144807
+        }
+      },
+      "newsCount": 1
+    },
+    "timestamp": "2025-12-14T12:12:52.179Z"
+  },
+  {
+    "type": "llm_output",
+    "stage": "decision_made",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "ordersCount": 0,
+      "confidence": 0.12,
+      "summary": "No trade signals strong enough to warrant a position while respecting risk limits and capital preservation.",
+      "keySignals": [
+        "ema_cross",
+        "vol_spike",
+        "news_sentiment"
+      ],
+      "orders": []
+    },
+    "timestamp": "2025-12-14T12:13:03.176Z"
+  },
+  {
+    "type": "data_fetch",
+    "stage": "nifty50_constituents",
+    "data": {
+      "count": 10,
+      "symbols": [
+        "NIFTY 50",
+        "TATASTEEL",
+        "HINDALCO",
+        "ETERNAL",
+        "ULTRACEMCO",
+        "LT",
+        "MARUTI",
+        "JSWSTEEL",
+        "NESTLEIND",
+        "BHARTIARTL"
+      ]
+    },
+    "timestamp": "2025-12-14T12:41:40.995Z"
+  },
+  {
+    "type": "market_data",
+    "stage": "quotes_fetched",
+    "data": {
+      "symbolCount": 9,
+      "samplePrices": {
+        "HINDALCO": {
+          "close": 851.2,
+          "volume": 21786
+        },
+        "ULTRACEMCO": {
+          "close": 11730,
+          "volume": 565
+        },
+        "TATASTEEL": {
+          "close": 172,
+          "volume": 144807
+        }
+      }
+    },
+    "timestamp": "2025-12-14T12:41:46.998Z"
+  },
+  {
+    "type": "llm_input",
+    "stage": "agent_input",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "date": "2025-12-14",
+      "symbols": [
+        "HINDALCO",
+        "ULTRACEMCO",
+        "TATASTEEL",
+        "ETERNAL",
+        "MARUTI",
+        "JSWSTEEL",
+        "LT",
+        "NESTLEIND",
+        "BHARTIARTL"
+      ],
+      "marketDataSample": {
+        "HINDALCO": {
+          "symbol": "HINDALCO",
+          "date": "2025-12-14",
+          "open": 830.8,
+          "high": 855,
+          "low": 830.6,
+          "close": 851.2,
+          "volume": 21786
+        },
+        "ULTRACEMCO": {
+          "symbol": "ULTRACEMCO",
+          "date": "2025-12-14",
+          "open": 11491,
+          "high": 11738,
+          "low": 11481,
+          "close": 11730,
+          "volume": 565
+        }
+      },
+      "newsCount": 1
+    },
+    "timestamp": "2025-12-14T12:41:47.004Z"
+  },
+  {
+    "type": "llm_output",
+    "stage": "decision_made",
+    "model": "openai/gpt-oss-20b",
+    "data": {
+      "ordersCount": 0,
+      "confidence": 0,
+      "summary": "No trade signals identified; market data and news do not trigger any defined entry criteria.",
+      "keySignals": [
+        "ema_cross",
+        "vol_spike",
+        "news_sentiment"
+      ],
+      "orders": []
+    },
+    "timestamp": "2025-12-14T12:41:58.472Z"
   }
 ]

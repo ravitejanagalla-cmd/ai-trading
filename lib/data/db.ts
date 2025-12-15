@@ -174,12 +174,19 @@ export async function getHistoricalPrices(symbol: string, days: number = 30) {
   const client = await pool.connect();
   
   try {
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
     const result = await client.query(
       `SELECT * FROM stock_prices 
        WHERE symbol = $1 
+       AND date >= $2
+       AND date <= $3
        ORDER BY date DESC 
-       LIMIT $2`,
-      [symbol, days]
+       LIMIT 1000`,
+      [symbol, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
     );
     return result.rows;
   } finally {

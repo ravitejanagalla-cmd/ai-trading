@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "fetch:logos": "node scripts/fetch-stock-logos.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -21,6 +22,7 @@
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "recharts": "^3.5.1",
     "tiktoken": "^1.0.22"
   },
   "devDependencies": {

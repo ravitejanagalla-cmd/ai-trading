@@ -4,17 +4,18 @@ import type { Browser, Page } from 'puppeteer';
 let puppeteerInstance: any = null;
 
 /**
- * Dynamically load puppeteer (plain version, stealth added manually)
+ * Dynamically load puppeteer (stealth applied via page.evaluateOnNewDocument)
  */
 async function loadPuppeteer() {
   if (puppeteerInstance) {
     return puppeteerInstance;
   }
 
-  // Load plain puppeteer - stealth plugin causes issues in Next.js
+  // Load plain puppeteer - stealth will be applied in createStealthPage
   const puppeteer = await import('puppeteer');
   puppeteerInstance = puppeteer.default || puppeteer;
   
+  console.log('✅ Puppeteer loaded (stealth mode enabled via page configuration)');
   return puppeteerInstance;
 }
 
@@ -65,7 +66,7 @@ export async function createStealthPage(browser: Browser, options: ScraperOption
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const page = await browser.newPage();
 
-  // Set viewport
+  // Set viewport with random variations
   await page.setViewport({
     width: 1920 + Math.floor(Math.random() * 100),
     height: 1080 + Math.floor(Math.random() * 100),
@@ -78,41 +79,73 @@ export async function createStealthPage(browser: Browser, options: ScraperOption
   // Set user agent
   await page.setUserAgent(opts.userAgent!);
 
-  // Remove webdriver flag
+  // Disable image loading to speed up scraping
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    const resourceType = request.resourceType();
+    if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
+
+  // Remove webdriver flag and mock browser properties
   await page.evaluateOnNewDocument(() => {
+    // Hide webdriver
     Object.defineProperty(navigator, 'webdriver', {
       get: () => false,
     });
     
-    // Override permissions
-    const originalQuery = window.navigator.permissions.query;
-    window.navigator.permissions.query = (parameters: any) => (
-      parameters.name === 'notifications' ?
-        Promise.resolve({ state: 'denied' } as PermissionStatus) :
-        originalQuery(parameters)
-    );
-
-    // Mock plugins
+    // Mock plugins array
     Object.defineProperty(navigator, 'plugins', {
-      get: () => [1, 2, 3, 4, 5]
+      get: () => [
+        { name: 'Chrome PDF Plugin', description: 'Portable Document Format', filename: 'internal-pdf-viewer', version: '1' },
+        { name: 'Chrome PDF Viewer', description: 'Portable Document Format', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', version: '1' },
+        { name: 'Native Client Executable', description: 'Native Client Executable', filename: 'internal-nacl-plugin', version: '1' }
+      ]
     });
 
     // Mock languages
     Object.defineProperty(navigator, 'languages', {
       get: () => ['en-US', 'en']
     });
+    
+    // Override permissions query
+    const originalQuery = window.navigator.permissions.query;
+    window.navigator.permissions.query = (parameters: any) => (
+      parameters.name === 'notifications' ?
+        Promise.resolve({ state: Notification.permission } as PermissionStatus) :
+        originalQuery(parameters)
+    );
+
+    // Mock chrome object (Chromium detection)
+    (window as any).chrome = {
+      runtime: {}
+    };
+
+    // Mock toString methods
+    window.console.debug = () => {};
+    window.console.log = () => {};
   });
 
   // Add realistic headers
   await page.setExtraHTTPHeaders({
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9,en;q=0.8',
+    'Accept': 'application/json, text/plain, */*',
     'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
+    'Referer': 'https://www.nseindia.com/',
+    'Origin': 'https://www.nseindia.com',
     'Upgrade-Insecure-Requests': '1',
     'Sec-Fetch-Dest': 'document',
     'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'none'
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="120", "Chromium";v="120"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"macOS"',
   });
 
   return page;

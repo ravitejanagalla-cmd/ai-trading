@@ -1,4 +1,5 @@
 import { getHistoricalData, getStockQuote } from '@/lib/scrapers/nse-scraper';
+import { getHistoricalDataFromMultipleSources } from '@/lib/scrapers/historical-data';
 import { storeStockPrice } from '@/lib/data/db';
 
 export interface ComprehensiveStockData {
@@ -7,6 +8,38 @@ export interface ComprehensiveStockData {
   historical: any[];
   news: any[];
   error?: string;
+}
+
+/**
+ * Fetch historical data with multiple fallbacks
+ */
+async function fetchHistoricalWithFallback(
+  symbol: string,
+  days: number
+): Promise<any[]> {
+  try {
+    // First try NSE API
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const formatDate = (d: Date): string => d.toISOString().split('T')[0];
+    
+    const nseData = await getHistoricalData(symbol, formatDate(startDate), formatDate(new Date()));
+    
+    if (nseData && nseData.length > 0) {
+      return nseData;
+    }
+  } catch (error) {
+    console.warn(`⚠️ NSE historical data failed, trying alternate sources...`);
+  }
+
+  // If NSE fails, try multiple alternate sources
+  try {
+    const alternateData = await getHistoricalDataFromMultipleSources(symbol, days);
+    return alternateData;
+  } catch (error) {
+    console.warn(`⚠️ All historical data sources failed for ${symbol}`);
+    return [];
+  }
 }
 
 /**
@@ -29,7 +62,7 @@ export async function fetchComprehensiveData(
     // Fetch current quote and historical data in parallel
     const [currentQuote, historicalData] = await Promise.all([
       getStockQuote(symbol),
-      getHistoricalData(symbol, formatDate(startDate), formatDate(endDate))
+      fetchHistoricalWithFallback(symbol, days)
     ]);
 
     console.log(`✅ Fetched ${historicalData?.length || 0} days of historical data for ${symbol}`);

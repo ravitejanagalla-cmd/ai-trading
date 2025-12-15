@@ -51,9 +51,7 @@ export async function POST(request: NextRequest) {
           high: day.high,
           low: day.low,
           close: day.close,
-          volume: day.volume,
-          prevClose: day.prevClose,
-          changePct: day.change ? parseFloat(day.change) : undefined
+          volume: day.volume
         });
         stored++;
       } catch (error) {
@@ -125,9 +123,7 @@ export async function GET(request: NextRequest) {
                 high: day.high,
                 low: day.low,
                 close: day.close,
-                volume: day.volume,
-                prevClose: day.prevClose,
-                changePct: day.change ? parseFloat(day.change) : undefined
+                volume: day.volume
               });
               stored++;
             } catch (error) {

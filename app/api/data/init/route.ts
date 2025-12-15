@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeDatabase, initializeQdrant } from '@/lib/data/db';
+import { initializeEnrichedDataSchema } from '@/lib/data/enriched-data';
 
 /**
  * POST /api/data/init
@@ -10,12 +11,15 @@ export async function POST(request: NextRequest) {
     // Initialize PostgreSQL schemas
     await initializeDatabase();
     
+    // Initialize enriched data schema
+    await initializeEnrichedDataSchema();
+    
     // Initialize Qdrant collections
     await initializeQdrant();
     
     return NextResponse.json({
       success: true,
-      message: 'Databases initialized successfully'
+      message: 'Databases initialized successfully (including enriched data schema)'
     });
   } catch (error) {
     console.error('Database initialization error:', error);
